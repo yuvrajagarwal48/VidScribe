@@ -1,0 +1,85 @@
+# ==========================================
+# VidScribe .gitignore
+# ==========================================
+
+# Environment variables & secrets (CRITICAL)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Python compilation & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Video, Audio & Media files (Ignore raw & processed media from git)
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.flv
+*.wmv
+*.mp3
+*.wav
+*.aac
+*.ogg
+*.m4a
+*TEMP_MPY*
+
+# User Data & Processing artifacts (preserve directory via .gitkeep)
+/data/*
+!/data/.gitkeep
+
+/processed/*
+!/processed/.gitkeep
+/processed/keyframes/*
+!/processed/keyframes/.gitkeep
+/processed/vectordb/*
+!/processed/vectordb/.gitkeep
+
+/summaries/*
+!/summaries/.gitkeep
+
+/scratch/
+/sample_videos/*
+!/sample_videos/.gitkeep
+
+# Vector Database (ChromaDB local persistence)
+chroma.sqlite3
+*.parquet
+*.sqlite3
+
+# PDF Storyboard & Summary exports
+*.pdf
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.agents/
+.gemini/
+
+# Logs & Testing
+*.log
+.pytest_cache/
+.coverage
+htmlcov/

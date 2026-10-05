@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  vidscribe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vidscribe-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Google Gemini API Key passed from host .env file
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.5-flash}
+      
+      # Model & Processing Hyperparameters
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+      - SCENE_THRESHOLD=${SCENE_THRESHOLD:-20.0}
+      - MIN_SCENE_LEN=${MIN_SCENE_LEN:-15}
+      - OCR_CONF_THRESHOLD=${OCR_CONF_THRESHOLD:-60}
+      - TOP_K_RESULTS=${TOP_K_RESULTS:-8}
+      
+      # Server Networking
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+    volumes:
+      # 1. Raw video uploads (persists uploaded MP4/MKV files across container restarts)
+      - ./data:/app/data
+      # 2. ChromaDB vector database and extracted keyframes
+      - ./processed:/app/processed
+      # 3. Exported Storyboard PDFs and AI Summary Highlight Videos
+      - ./summaries:/app/summaries
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G

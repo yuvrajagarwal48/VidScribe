@@ -1,0 +1,32 @@
+# VidScribe Agentic VideoRAG Dependencies
+# Core Media & Vision
+numpy
+opencv-python-headless
+scenedetect[opencv]
+pytesseract
+pillow
+moviepy
+openai-whisper
+
+# Agentic Orchestration & LangChain Ecosystem
+langchain>=1.4.0
+langchain-core>=1.6.0
+langgraph>=1.2.0
+langchain-google-genai>=4.4.0
+
+# Vector Database & Embeddings
+chromadb
+sentence-transformers
+
+# Creative Media Synthesis
+gtts
+reportlab
+matplotlib
+
+# Backend Web API & Streaming
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.9.0
+python-dotenv
+websockets
+python-multipart

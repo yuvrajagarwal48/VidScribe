@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Environment & Credentials
+.env
+.env.*
+*.env
+
+# Python Bytecode & Environments
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+.Python
+
+# User Media Data (Mounted via Volumes)
+data/*
+!data/.gitkeep
+processed/*
+!processed/.gitkeep
+summaries/*
+!summaries/.gitkeep
+sample_videos/
+scratch/
+legacy/
+
+# Media & Temp Files
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wav
+*.mp3
+*TEMP_MPY*
+*.sqlite3
+*.parquet
+*.pdf
+
+# IDE & Editor
+.vscode
+.idea
+.agents
+.gemini
+*.log

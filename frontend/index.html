@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidScribe | Multimodal Video Intelligence & Agentic RAG</title>
+  
+  <!-- Premium Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Cache-Busted Stylesheet v6.0 -->
+  <link rel="stylesheet" href="/static/css/style.css?v=7.0">
+</head>
+<body>
+  <!-- Top App Navigation Bar -->
+  <header class="studio-header">
+    <div class="header-brand-group">
+      <div class="brand-symbol">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polygon points="23 7 16 12 23 17 23 7"></polygon>
+          <rect x="1" y="5" width="15" height="14" rx="3" ry="3"></rect>
+        </svg>
+      </div>
+      <div class="brand-text-block">
+        <div class="brand-title-row">
+          <h1 class="brand-title">VidScribe</h1>
+          <span class="brand-version-badge">STUDIO v2.0</span>
+        </div>
+        <span class="brand-subtitle">Multimodal Video RAG & Reasoning</span>
+      </div>
+    </div>
+
+    <!-- Center: Video Selector Bar -->
+    <div class="header-video-selector">
+      <div class="selector-dropdown-wrapper">
+        <svg class="selector-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <select id="videoSelect" aria-label="Select Video to Chat With">
+          <option value="" disabled selected>Scanning media library...</option>
+        </select>
+        <svg class="dropdown-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+
+      <div id="videoStatusBadge" class="status-indicator-pill ready">
+        <span class="status-indicator-dot"></span>
+        <span id="videoStatusText">Ready</span>
+      </div>
+    </div>
+
+    <!-- Right Controls: Action Buttons -->
+    <div class="header-action-group">
+      <button id="btnOpenUpload" class="action-btn upload-btn" title="Upload Video File">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span>Upload Video</span>
+      </button>
+
+      <button id="btnOpenStudio" class="action-btn studio-btn" title="Open Media Studio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <line x1="7" y1="2" x2="7" y2="22"></line>
+          <line x1="17" y1="2" x2="17" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <line x1="2" y1="7" x2="7" y2="7"></line>
+          <line x1="2" y1="17" x2="7" y2="17"></line>
+          <line x1="17" y1="17" x2="22" y2="17"></line>
+          <line x1="17" y1="7" x2="22" y2="7"></line>
+        </svg>
+        <span>Media Studio</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Workspace -->
+  <main class="studio-workspace">
+    <!-- Left Column: Media Player & Scene Timeline Dock (Compact ~320px) -->
+    <aside class="media-dock-sidebar">
+      <!-- Video Player Frame -->
+      <div class="player-panel">
+        <div class="panel-section-title">
+          <span class="title-label">Live Video Stream</span>
+          <span id="playerAutoStatus" class="tag-badge">Synced</span>
+        </div>
+
+        <div class="video-container">
+          <video id="mainVideoPlayer" controls preload="metadata">
+            <p>Your browser does not support HTML5 video.</p>
+          </video>
+          <div id="playerPlaceholder" class="player-empty-state">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <p>Select or upload a video</p>
+          </div>
+        </div>
+
+        <div class="player-meta-bar">
+          <span class="meta-label">Timecode:</span>
+          <div class="timecode-display">
+            <span id="currentTimeDisplay">00:00:00</span>
+            <span class="sep">/</span>
+            <span id="durationDisplay">00:00:00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detected Scenes Timeline Rail -->
+      <div class="scenes-panel">
+        <div class="panel-section-title">
+          <span class="title-label">Detected Scenes & Keyframes</span>
+          <span id="sceneCountBadge" class="count-badge">0 Scenes</span>
+        </div>
+
+        <div id="sceneRail" class="scenes-timeline-rail">
+          <div class="empty-scenes-prompt">No scenes detected yet. Upload or select a video to begin analysis.</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Column: Dominant Chat & Multi-Agent Intelligence Center (~78% width) -->
+    <section class="chat-workspace-panel">
+      <!-- Chat Sub-Header Toolbar -->
+      <div class="chat-workspace-toolbar">
+        <div class="chat-active-info">
+          <div class="avatar-ring">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+              <rect x="4" y="8" width="16" height="12" rx="2"></rect>
+              <line x1="8" y1="12" x2="8" y2="14"></line>
+              <line x1="16" y1="12" x2="16" y2="14"></line>
+            </svg>
+          </div>
+          <div class="chat-heading-block">
+            <h2 class="chat-title">VidScribe Intelligence</h2>
+            <div class="chat-meta-tags">
+              <span id="chatMemoryBadge" class="context-memory-tag" title="Conversational short-term memory status">
+                <span class="tag-dot"></span>
+                <span id="chatMemoryText">Memory: Fresh</span>
+              </span>
+              <span class="model-tag">Gemini 2.5 • ChromaDB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-actions-group">
+          <button id="btnNewChat" class="btn-tool" title="Start a fresh chat window for this video">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Chat</span>
+          </button>
+
+          <button id="btnClearChat" class="btn-tool-icon" title="Clear message stream">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Multi-Agent Orchestrator Hub & Thinking Pipeline -->
+      <div class="orchestrator-hub trace-accordion">
+        <button id="toggleTraceBtn" class="orchestrator-toggle-bar" aria-expanded="false" type="button">
+          <div class="toggle-bar-left">
+            <span class="orchestrator-pulse-orb"></span>
+            <span id="traceSummaryText" class="orchestrator-title">Pipeline: Ready</span>
+          </div>
+
+          <div class="toggle-bar-center">
+            <span class="agent-preview-pill active">🎯 Supervisor</span>
+            <span class="agent-preview-pill">🔍 ChromaDB RAG</span>
+            <span class="agent-preview-pill">👁️ Vision OCR</span>
+            <span class="agent-preview-pill">🎙️ Audio Engine</span>
+          </div>
+
+          <div class="toggle-bar-right">
+            <span id="orchestratorStatusBadge" class="pipeline-badge">4 Agents Deployed</span>
+            <span class="toggle-action-label">Inspect Pipeline</span>
+            <svg class="chevron-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Expanded Multi-Agent Dashboard & Thought Stream -->
+        <div id="traceLogContainer" class="orchestrator-expanded-panel hidden">
+          <!-- Multi-Agent Dispatch Matrix -->
+          <div class="agent-matrix-grid">
+            <!-- 1. Supervisor Agent -->
+            <div id="agentCardSupervisor" class="agent-pod">
+              <div class="agent-pod-head">
+                <div class="pod-title">
+                  <span class="pod-icon">🎯</span>
+                  <span class="pod-name">Supervisor Agent</span>
+                </div>
+                <span class="agent-pod-status idle">Idle</span>
+              </div>
+              <p class="pod-desc">Intent classification, query reformulation & conversational memory resolution.</p>
+            </div>
+
+            <!-- 2. Multimodal Vector RAG -->
+            <div id="agentCardRag" class="agent-pod">
+              <div class="agent-pod-head">
+                <div class="pod-title">
+                  <span class="pod-icon">🔍</span>
+                  <span class="pod-name">Multimodal Vector RAG</span>
+                </div>
+                <span class="agent-pod-status idle">Idle</span>
+              </div>
+              <p class="pod-desc">ChromaDB semantic search across video keyframe embeddings & transcripts.</p>
+            </div>
+
+            <!-- 3. Vision & OCR Engine -->
+            <div id="agentCardVision" class="agent-pod">
+              <div class="agent-pod-head">
+                <div class="pod-title">
+                  <span class="pod-icon">👁️</span>
+                  <span class="pod-name">Vision & OCR Grounder</span>
+                </div>
+                <span class="agent-pod-status idle">Idle</span>
+              </div>
+              <p class="pod-desc">Visual keyframe temporal analysis & on-screen text recognition.</p>
+            </div>
+
+            <!-- 4. Audio Engine -->
+            <div id="agentCardAudio" class="agent-pod">
+              <div class="agent-pod-head">
+                <div class="pod-title">
+                  <span class="pod-icon">🎙️</span>
+                  <span class="pod-name">Audio & Whisper Engine</span>
+                </div>
+                <span class="agent-pod-status idle">Idle</span>
+              </div>
+              <p class="pod-desc">Whisper ASR alignment, speech transcript indexing & speaker sync.</p>
+            </div>
+          </div>
+
+          <!-- Live Step-by-Step Thought Execution Terminal -->
+          <div class="terminal-container">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="t-dot red"></span>
+                <span class="t-dot yellow"></span>
+                <span class="t-dot green"></span>
+              </div>
+              <span class="terminal-title">VidScribe Orchestration Execution Log</span>
+            </div>
+            <div id="traceLogs" class="terminal-log-output">
+              <span class="log-empty-msg">// Agent thought traces will stream here in real-time when queries are executed...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages Scrollable Stream (Centered & Expansive) -->
+      <div id="chatMessageStream" class="chat-scroll-stream">
+        <div class="chat-stream-inner">
+          <!-- Initial Welcome Card -->
+          <div class="message-row agent">
+            <div class="msg-header">
+              <span class="sender-name">VidScribe Assistant</span>
+              <span class="time-meta">Ready</span>
+            </div>
+            <div class="msg-content">
+              <p>Welcome to <strong>VidScribe Studio</strong>! To begin, select an existing video from the dropdown menu above or click <strong>Upload Video</strong>. Once a video is active, you can chat about dialogue, scenes, text, and visual highlights with conversational memory.</p>
+              
+              <div class="starter-suggestions">
+                <div class="suggestion-header">Getting Started:</div>
+                <div class="suggestion-chips">
+                  <button class="pill-suggestion" data-prompt="What are the key highlights and summary of this video?">
+                    <span>1. Select or upload a video from the top bar</span>
+                  </button>
+                  <button class="pill-suggestion" data-prompt="At what timestamp does the main event take place?">
+                    <span>2. Ask questions about dialogue, people, or events</span>
+                  </button>
+                  <button class="pill-suggestion" data-prompt="What text is written on the screen throughout the video?">
+                    <span>3. Click grounded timestamps to jump to exact scenes</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Dock (Ultra-Sleek, Compact, Zero Bulky Banners) -->
+      <div class="chat-input-dock">
+        <form id="chatForm" class="chat-input-form">
+          <div class="input-shell">
+            <textarea 
+              id="chatInput" 
+              class="chat-text-field" 
+              placeholder="Ask anything about the video..." 
+              rows="1"
+              required></textarea>
+            
+            <button type="submit" id="btnSendMessage" class="btn-send-action" title="Send message">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+
+          <div class="input-sub-caption">
+            <span>VidScribe Multimodal VideoRAG</span>
+            <span class="dot-sep">•</span>
+            <span>Click timestamp citations to seek video</span>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- Upload Modal -->
+  <div id="uploadModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <h3>Upload Video File</h3>
+        </div>
+        <button id="btnCloseUpload" class="modal-close-btn" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="dropZone" class="drop-zone-card">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p class="drop-primary">Drag & drop your video file here</p>
+          <p class="drop-secondary">Supports MP4, MKV, AVI, MOV • Auto-indexed with scenes & keyframes</p>
+          <input type="file" id="videoFileInput" accept="video/*" class="hidden">
+        </div>
+        <div id="uploadProgress" class="upload-progress-wrapper hidden">
+          <div id="uploadProgressBar" class="upload-progress-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Studio Modal -->
+  <div id="studioModal" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span style="font-size: 1.15rem;">🎬</span>
+          <h3>Media Studio & Synthesis</h3>
+        </div>
+        <button id="btnCloseStudio" class="modal-close-btn" type="button">✕</button>
+      </div>
+      <div class="modal-body studio-modal-grid">
+        <!-- Storyboard PDF Card -->
+        <div class="studio-export-card">
+          <div class="card-icon-badge">📄</div>
+          <h4>Storyboard PDF</h4>
+          <p>Exportable multi-page PDF document containing detected keyframes, exact timestamps, and narrative commentary.</p>
+          <div class="card-action-bar">
+            <button id="btnGenerateStoryboard" class="btn-studio-action">Generate Storyboard</button>
+            <a id="btnDownloadPdf" href="#" target="_blank" class="btn-studio-download hidden">Download PDF</a>
+          </div>
+        </div>
+
+        <!-- AI Summary Video Card -->
+        <div class="studio-export-card">
+          <div class="card-icon-badge">🎞️</div>
+          <h4>AI Summary Video</h4>
+          <p>Stitches together the most salient video moments into a concise highlights montage with synthesized voiceover narration.</p>
+          <div class="card-action-bar">
+            <button id="btnGenerateVideoSummary" class="btn-studio-action">Compile Highlights</button>
+            <a id="btnWatchVideoSummary" href="#" target="_blank" class="btn-studio-download hidden">Watch Video</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Markdown Parser Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- VidScribe Client JavaScript Bundles with Cache-Buster v6.0 -->
+  <script src="/static/js/api.js?v=7.0"></script>
+  <script src="/static/js/player.js?v=7.0"></script>
+  <script src="/static/js/chat.js?v=7.0"></script>
+  <script src="/static/js/app.js?v=7.0"></script>
+</body>
+</html>
