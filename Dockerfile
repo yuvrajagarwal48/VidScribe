@@ -38,8 +38,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Pre-cache foundational ML models in the image layer to prevent cold-start download delays
-RUN python -c "import whisper; whisper.load_model('base')" && \
-    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" || \
+    python -c "import whisper; whisper.load_model('base')"
 
 # Copy application source code
 COPY . .

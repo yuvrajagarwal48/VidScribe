@@ -237,11 +237,12 @@ class VidScribeEvaluator:
         t0 = time.time()
         from schemas.video_models import SceneAnalysisResult
         indexed_docs = 0
+        analyses = []
         for s in scenes:
             kf = keyframes.get(s.scene_index)
             kf_path = kf.image_path if kf else ""
             s_transcripts = [t for t in transcripts if (s.start_time <= t.start_time <= s.end_time)]
-            analysis = SceneAnalysisResult(
+            analyses.append(SceneAnalysisResult(
                 video_id=self.video_id,
                 scene_index=s.scene_index,
                 keyframe_path=kf_path,
@@ -250,9 +251,9 @@ class VidScribeEvaluator:
                 formatted_start=s.formatted_start,
                 formatted_end=s.formatted_end,
                 transcripts=s_transcripts
-            )
-            doc_ids = self.vector_store.index_scene(analysis)
-            indexed_docs += len(doc_ids)
+            ))
+        doc_ids = self.vector_store.index_scenes_batch(analyses, batch_size=64)
+        indexed_docs = len(doc_ids)
         t_idx = time.time() - t0
 
         self.tracker.record_manual_phase(

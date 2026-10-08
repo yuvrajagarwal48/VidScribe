@@ -99,7 +99,7 @@ def ingestion_node(state: AgentState) -> Dict[str, Any]:
         trace.append(f"Notice: Audio transcription note ({e}). Continuing with visual timeline.")
         all_transcripts = []
 
-    indexed_count = 0
+    analyses: List[SceneAnalysisResult] = []
     for scene in scenes:
         kf = keyframes.get(scene.scene_index)
         kf_path = kf.image_path if kf else ""
@@ -112,7 +112,7 @@ def ingestion_node(state: AgentState) -> Dict[str, Any]:
             or (t.start_time <= scene.start_time and t.end_time >= scene.end_time)
         ]
 
-        analysis = SceneAnalysisResult(
+        analyses.append(SceneAnalysisResult(
             video_id=video_id,
             scene_index=scene.scene_index,
             keyframe_path=kf_path,
@@ -123,11 +123,11 @@ def ingestion_node(state: AgentState) -> Dict[str, Any]:
             transcripts=scene_transcripts,
             ocr_texts=[],
             detected_objects=[]
-        )
+        ))
 
-        doc_ids = vector_store.index_scene(analysis)
-        if doc_ids:
-            indexed_count += len(doc_ids)
+    # Fast batch indexing in ChromaDB (1 batch instead of N individual disk writes)
+    doc_ids = vector_store.index_scenes_batch(analyses, batch_size=64)
+    indexed_count = len(doc_ids)
 
     # 3. Launch background scene graph enrichment worker
     Thread(

@@ -9,7 +9,12 @@ import os
 import tempfile
 from typing import List, Optional
 from pathlib import Path
-import whisper
+
+try:
+    from faster_whisper import WhisperModel
+    HAS_FASTER_WHISPER = True
+except Exception:
+    HAS_FASTER_WHISPER = False
 
 import config
 from schemas.video_models import TranscriptSegment
@@ -17,10 +22,12 @@ from schemas.video_models import TranscriptSegment
 
 class AudioEngine:
     """
-    Manages audio extraction and speech transcription using Whisper.
+    Manages audio extraction and speech transcription using faster-whisper (CTranslate2 INT8)
+    or OpenAI Whisper fallback.
     """
 
     _whisper_instance = None  # Singleton model instance to prevent repeated weight loads
+    _is_faster_whisper = False
 
     def __init__(self, model_size: str = config.WHISPER_MODEL):
         """
@@ -31,11 +38,28 @@ class AudioEngine:
 
     @classmethod
     def _ensure_whisper_loaded(cls):
-        """Loads Whisper model once across all instances."""
+        """Loads Whisper model once across all instances (prefers faster-whisper INT8 for speed & low RAM)."""
         if cls._whisper_instance is None:
-            print(f"Loading Whisper model ({config.WHISPER_MODEL})...")
+            if HAS_FASTER_WHISPER:
+                print(f"Loading faster-whisper CTranslate2 model ({config.WHISPER_MODEL}, int8, cpu_threads=1)...")
+                try:
+                    cls._whisper_instance = WhisperModel(
+                        config.WHISPER_MODEL,
+                        device="cpu",
+                        compute_type="int8",
+                        cpu_threads=1
+                    )
+                    cls._is_faster_whisper = True
+                    print("faster-whisper CTranslate2 model loaded successfully.")
+                    return
+                except Exception as e:
+                    print(f"Notice: faster-whisper failed to load ({e}). Falling back to standard whisper.")
+
+            import whisper
+            print(f"Loading standard Whisper model ({config.WHISPER_MODEL})...")
             cls._whisper_instance = whisper.load_model(config.WHISPER_MODEL)
-            print("Whisper model loaded successfully.")
+            cls._is_faster_whisper = False
+            print("Standard Whisper model loaded successfully.")
 
     @staticmethod
     def _extract_audio_subclip(video_path: str, start_time: float, end_time: float, output_wav: str) -> bool:
@@ -103,18 +127,15 @@ class AudioEngine:
 
             # Execute Whisper transcription
             self._ensure_whisper_loaded()
-            result = self._whisper_instance.transcribe(tmp_wav_path, fp16=False)
-
             transcripts: List[TranscriptSegment] = []
-            
-            # Check segment breakdown
-            raw_segments = result.get("segments", [])
-            if raw_segments:
-                for seg in raw_segments:
-                    text = seg.get("text", "").strip()
+
+            if self._is_faster_whisper:
+                segments_gen, _ = self._whisper_instance.transcribe(tmp_wav_path, beam_size=1, temperature=0.0)
+                for seg in segments_gen:
+                    text = seg.text.strip()
                     if text:
-                        seg_start = start_time + seg.get("start", 0.0)
-                        seg_end = start_time + seg.get("end", end_time - start_time)
+                        seg_start = start_time + float(seg.start)
+                        seg_end = start_time + min(float(seg.end), end_time - start_time)
                         transcripts.append(
                             TranscriptSegment(
                                 transcript=text,
@@ -123,16 +144,32 @@ class AudioEngine:
                                 confidence=1.0
                             )
                         )
-            elif result.get("text", "").strip():
-                # Single fallback text
-                transcripts.append(
-                    TranscriptSegment(
-                        transcript=result["text"].strip(),
-                        start_time=start_time,
-                        end_time=end_time,
-                        confidence=1.0
+            else:
+                result = self._whisper_instance.transcribe(tmp_wav_path, fp16=False)
+                raw_segments = result.get("segments", [])
+                if raw_segments:
+                    for seg in raw_segments:
+                        text = seg.get("text", "").strip()
+                        if text:
+                            seg_start = start_time + seg.get("start", 0.0)
+                            seg_end = start_time + seg.get("end", end_time - start_time)
+                            transcripts.append(
+                                TranscriptSegment(
+                                    transcript=text,
+                                    start_time=seg_start,
+                                    end_time=seg_end,
+                                    confidence=1.0
+                                )
+                            )
+                elif result.get("text", "").strip():
+                    transcripts.append(
+                        TranscriptSegment(
+                            transcript=result["text"].strip(),
+                            start_time=start_time,
+                            end_time=end_time,
+                            confidence=1.0
+                        )
                     )
-                )
 
             return transcripts
 
@@ -169,20 +206,35 @@ class AudioEngine:
             clip.close()
 
             self._ensure_whisper_loaded()
-            result = self._whisper_instance.transcribe(tmp_wav_path, fp16=False)
             transcripts: List[TranscriptSegment] = []
 
-            for seg in result.get("segments", []):
-                text = seg.get("text", "").strip()
-                if text:
-                    transcripts.append(
-                        TranscriptSegment(
-                            transcript=text,
-                            start_time=float(seg.get("start", 0.0)),
-                            end_time=float(seg.get("end", 0.0)),
-                            confidence=1.0
+            if self._is_faster_whisper:
+                segments_gen, _ = self._whisper_instance.transcribe(tmp_wav_path, beam_size=1, temperature=0.0)
+                for seg in segments_gen:
+                    text = seg.text.strip()
+                    if text:
+                        transcripts.append(
+                            TranscriptSegment(
+                                transcript=text,
+                                start_time=float(seg.start),
+                                end_time=float(seg.end),
+                                confidence=1.0
+                            )
                         )
-                    )
+            else:
+                result = self._whisper_instance.transcribe(tmp_wav_path, fp16=False)
+                for seg in result.get("segments", []):
+                    text = seg.get("text", "").strip()
+                    if text:
+                        transcripts.append(
+                            TranscriptSegment(
+                                transcript=text,
+                                start_time=float(seg.get("start", 0.0)),
+                                end_time=float(seg.get("end", 0.0)),
+                                confidence=1.0
+                            )
+                        )
+
             return transcripts
 
         finally:
