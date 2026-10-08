@@ -223,6 +223,19 @@ class MediaSynthesisEngine:
 
                         # Draw Keyframe Image
                         kf_path = scene.get("keyframe_path") or scene.get("source")
+                        if kf_path and not os.path.exists(kf_path):
+                            # Cross-platform fallback for Docker / mounted volumes
+                            fname = kf_path.replace("\\", "/").split("/")[-1]
+                            v_id = scene.get("video_id") or ""
+                            candidate = config.KEYFRAMES_DIR / v_id / fname
+                            if candidate.exists():
+                                kf_path = str(candidate)
+                            else:
+                                for d in config.KEYFRAMES_DIR.iterdir():
+                                    if d.is_dir() and (d / fname).exists():
+                                        kf_path = str(d / fname)
+                                        break
+
                         if kf_path and os.path.exists(kf_path):
                             try:
                                 img = cv2.imread(kf_path)

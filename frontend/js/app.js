@@ -302,23 +302,51 @@ const App = {
       this._pollAttempts = 0;
 
       railEl.innerHTML = "";
+      const formatShortTs = (ts) => {
+        if (!ts) return "00:00";
+        const raw = String(ts).split(".")[0];
+        const parts = raw.split(":");
+        if (parts.length === 3 && parts[0] === "00") {
+          return `${parts[1]}:${parts[2]}`;
+        }
+        return raw;
+      };
+
       scenes.forEach((s) => {
         const card = document.createElement("div");
         card.className = "scene-timeline-card";
-        card.title = `Click to seek to Scene ${s.scene_index + 1} (${s.formatted_start})`;
+        card.title = `Click to seek to Scene ${s.scene_index + 1} (${s.formatted_start} - ${s.formatted_end})`;
+
+        const timecodeText = `${formatShortTs(s.formatted_start)} - ${formatShortTs(s.formatted_end)}`;
+
+        let rawDesc = (s.description || "").replace(/^Scene\s+\d+\s*\([^)]*\)\.?\s*/i, "").trim();
+        rawDesc = rawDesc.replace(/^[\s\.\:\,\-]+/, "").trim();
+
+        let descText = rawDesc;
+        if (!descText || descText.length < 3 || descText === ".") {
+          descText = `Video highlight segment (${timecodeText})`;
+        }
+
+        const fallbackSvg = `
+          <div class="scene-card-thumb-fallback">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"></polygon>
+            </svg>
+          </div>
+        `;
 
         const thumbHtml = s.keyframe_url
-          ? `<img src="${s.keyframe_url}" alt="Scene ${s.scene_index + 1}" class="scene-card-thumb" onerror="this.style.display='none'">`
-          : "";
+          ? `<img src="${s.keyframe_url}" alt="Scene ${s.scene_index + 1}" class="scene-card-thumb" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">${fallbackSvg.replace('class="scene-card-thumb-fallback"', 'class="scene-card-thumb-fallback" style="display:none;"')}`
+          : fallbackSvg;
 
         card.innerHTML = `
           <div class="scene-card-top">
             <span class="scene-title-badge">Scene ${s.scene_index + 1}</span>
-            <span class="scene-timecode-badge">${s.formatted_start} - ${s.formatted_end}</span>
+            <span class="scene-timecode-badge">${timecodeText}</span>
           </div>
           <div class="scene-card-body">
             ${thumbHtml}
-            <div class="scene-description-text">${this.escapeHtml(s.description || "Video segment")}</div>
+            <div class="scene-description-text">${App.escapeHtml(descText)}</div>
           </div>
         `;
 
@@ -330,7 +358,8 @@ const App = {
       });
 
     } catch (err) {
-      railEl.innerHTML = `<div class="empty-scenes-prompt">Failed to load timeline: ${this.escapeHtml(err.message)}</div>`;
+      console.error("loadTimeline error:", err);
+      railEl.innerHTML = `<div class="empty-scenes-prompt">Failed to load timeline: ${App.escapeHtml(err.message)}</div>`;
     }
   },
 

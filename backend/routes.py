@@ -106,6 +106,12 @@ async def get_video_timeline(video_id: str):
     Supports both /api/videos/{video_id}/timeline and /api/timeline/{video_id}.
     """
     clean_id = urllib.parse.unquote(video_id).strip()
+    # Strip media extensions if passed
+    for ext in [".mp4", ".mov", ".mkv", ".webm", ".avi"]:
+        if clean_id.lower().endswith(ext):
+            clean_id = clean_id[:-len(ext)]
+            break
+
     scenes = vector_store.get_all_scenes_for_video(clean_id)
     if not scenes and clean_id != video_id:
         scenes = vector_store.get_all_scenes_for_video(video_id)
@@ -114,8 +120,9 @@ async def get_video_timeline(video_id: str):
         # Check if video exists locally but isn't indexed yet
         vid_path = None
         for f in config.DATA_DIR.iterdir():
-            if f.stem == clean_id or f.stem == video_id:
+            if f.stem == clean_id or f.stem == video_id or f.name == clean_id:
                 vid_path = str(f)
+                clean_id = f.stem
                 break
         
         if vid_path:
@@ -126,7 +133,11 @@ async def get_video_timeline(video_id: str):
     for s in scenes:
         meta = s.get("metadata", {})
         idx = meta.get("scene_index", 0)
-        kf_filename = f"{clean_id}_scene_{idx:03d}.jpg"
+        kf_path = meta.get("keyframe_path")
+        if kf_path and os.path.basename(kf_path):
+            kf_filename = os.path.basename(kf_path)
+        else:
+            kf_filename = f"{clean_id}_scene_{idx:03d}.jpg"
         
         timeline.append({
             "scene_index": idx,
@@ -332,17 +343,35 @@ async def stream_raw_video(filename: str):
     return FileResponse(path=str(vid_file), media_type="video/mp4")
 
 
-@router.get("/media/keyframe/{video_id}/{filename}")
+@router.get("/media/keyframe/{video_id}/{filename:path}")
 async def get_keyframe_image(video_id: str, filename: str):
-    """Serves extracted JPEG keyframes for the timeline and scene cards."""
+    """Serves extracted JPEG keyframes for the timeline and scene cards with resilient path matching."""
     clean_vid = urllib.parse.unquote(video_id).strip()
     clean_file = urllib.parse.unquote(filename).strip()
+
+    # 1. Direct path check
     img_path = config.KEYFRAMES_DIR / clean_vid / clean_file
-    if not img_path.exists():
-        img_path = config.KEYFRAMES_DIR / video_id / filename
-    if not img_path.exists():
-        raise HTTPException(status_code=404, detail="Keyframe image not found")
-    return FileResponse(path=str(img_path), media_type="image/jpeg")
+    if img_path.exists():
+        return FileResponse(path=str(img_path), media_type="image/jpeg")
+
+    # 2. Raw params check
+    raw_path = config.KEYFRAMES_DIR / video_id / filename
+    if raw_path.exists():
+        return FileResponse(path=str(raw_path), media_type="image/jpeg")
+
+    # 3. Normalized fallback for Unicode fullwidth pipe ｜ vs ASCII pipe | and case differences
+    norm_vid = clean_vid.replace("｜", "|").lower()
+    for d in config.KEYFRAMES_DIR.iterdir():
+        if d.is_dir() and (d.name.lower() == clean_vid.lower() or d.name.replace("｜", "|").lower() == norm_vid):
+            direct_child = d / clean_file
+            if direct_child.exists():
+                return FileResponse(path=str(direct_child), media_type="image/jpeg")
+            norm_file = clean_file.replace("｜", "|").lower()
+            for f in d.iterdir():
+                if f.is_file() and (f.name.lower() == clean_file.lower() or f.name.replace("｜", "|").lower() == norm_file):
+                    return FileResponse(path=str(f), media_type="image/jpeg")
+
+    raise HTTPException(status_code=404, detail="Keyframe image not found")
 
 
 @router.get("/media/storyboard/{video_id}")
