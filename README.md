@@ -1,4 +1,4 @@
-﻿# VidScribe 🎬
+# VidScribe 🎬
 ### Agentic Multimodal Video Intelligence & Synthesis Studio
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
@@ -20,6 +20,7 @@
 - **⏱️ Sub-Second Grounded Citations**: Interactive timestamp chips (`▶ 00:06.539 - 00:12.345`) embedded directly in answers that seek the synchronized HTML5 player in one click.
 - **🎨 Precision Grey-Black Studio UI**: Modern 2-panel workstation featuring a compact video monitor dock, dominant intelligence canvas, and an expandable Multi-Agent Cockpit displaying live thought traces.
 - **📄 Autonomous Media Studio**: One-click generation of exportable Storyboard PDFs (with keyframe grids & timestamps) and compiled AI Video Highlight montages with synthesized neural voiceover.
+- **📊 Evaluation & Benchmarking Suite**: Complete observability module measuring phase-level token consumption, latency waterfalls, estimated API costs, automated **Ragas** RAG quality evaluation (Faithfulness & Answer Relevance), and an interactive **Streamlit** dashboard.
 - **🐳 Production Docker Containerization**: Complete multi-stage Docker environment with pre-installed `ffmpeg`, `tesseract-ocr`, and pre-cached ML model weights.
 
 ---
@@ -117,6 +118,12 @@ flowchart TD
    ```
    Open **http://localhost:8000** in your browser.
 
+   To launch the **Streamlit Evaluation Dashboard** alongside or separately:
+   ```bash
+   docker compose up -d eval-dashboard
+   ```
+   Open **http://localhost:8501** in your browser.
+
 ---
 
 ### Option B: Local Setup (Python 3.11+)
@@ -148,25 +155,90 @@ flowchart TD
 
 ---
 
+## 📊 Evaluation & Benchmarking Suite (Tokens, Latency & Ragas)
+
+VidScribe includes a comprehensive benchmarking engine and an interactive Streamlit evaluation studio to measure performance, cost, and retrieval quality.
+
+### 📐 What is Measured?
+
+1. **Token Accounting across Pipeline Phases**:
+   - **Ingestion Tokens**: Whisper ASR transcript tokens, on-screen OCR text tokens, and dense embedding text tokens.
+   - **Agentic Tokens**: Supervisor query routing, dialogue query reformulation, and Multimodal RAG prompt/completion tokens.
+   - **Cost Estimation**: Automatic USD expenditure estimation based on Google Gemini token pricing tiers.
+
+2. **Phase-by-Phase Latency (Seconds)**:
+   - Audio extraction & Whisper transcription latency.
+   - PySceneDetect scene segmentation & keyframe extraction latency.
+   - Headless Tesseract OCR latency.
+   - Dense embedding & ChromaDB persistence latency.
+   - Retrieval search latency & Agent LLM streaming generation latency.
+   - End-to-end total execution latency.
+
+3. **Automated RAG Quality Scoring via Ragas**:
+   - **Faithfulness**: Verifies whether the generated response is strictly grounded in the retrieved video multimodal context.
+   - **Answer Relevance**: Measures how directly and completely the answer addresses the user's specific prompt.
+
+---
+
+### 🖥️ Interactive Streamlit Dashboard
+
+Launch the dedicated evaluation dashboard:
+
+```bash
+streamlit run eval_dashboard.py
+```
+*(Or via Docker: `docker compose up eval-dashboard` at `http://localhost:8501`)*
+
+**Features**:
+- **Video Uploader & Selector**: Test with freshly uploaded videos or select pre-indexed videos from `./data`.
+- **Query & Evaluation Runner**: Enter test questions and trigger the complete multimodal retrieval pipeline with one click.
+- **Visual Analytics**: Interactive Plotly bar and waterfall charts displaying token distributions and latency bottlenecks.
+- **Ragas Metric Gauges**: Visual circular gauge indicators for Faithfulness and Relevance.
+- **Grounded Citations**: View retrieved scenes, keyframe snapshots, and OCR/speech text.
+- **One-Click Export**: Download structured evaluation reports in Markdown (`.md`) and JSON (`.json`).
+
+---
+
+### ⚡ CLI Headless Benchmarking Script
+
+Run quick evaluations from the terminal:
+
+```bash
+# Evaluate an existing video with a prompt
+python eval_tokens_and_rag.py --video "sample_videos/demo.mp4" --question "Who won the match and what was the turning point?"
+
+# Evaluate without Ragas (tokens and latency only)
+python eval_tokens_and_rag.py --video "sample_videos/demo.mp4" --question "Summarize the key events" --no-ragas
+```
+
+Reports are automatically saved to:
+- `reports/latest_metrics.md` (Rich GitHub Markdown report)
+- `reports/latest_metrics.json` (Structured JSON benchmark data)
+
+---
+
 ## 📁 Repository Structure
 
 ```
 vidscribe/
-├── agents/             # LangGraph agent nodes (Supervisor, Multimodal RAG)
-├── backend/            # FastAPI app, REST routing, WebSockets & session memory
-├── core/               # Video, Audio, Vision, Vector DB & Media synthesis engines
-├── frontend/           # Grey-Black studio single-page web UI (HTML, CSS, JS)
-│   ├── css/style.css   # Precision design tokens & component stylesheets
-│   └── js/             # Modular controllers (player, chat, app, api)
-├── schemas/            # Pydantic schemas for RAG requests, segments & metadata
-├── data/               # Raw uploaded videos (mounted volume)
-├── processed/          # Extracted keyframes & persistent ChromaDB storage
-├── summaries/          # Output directory for Storyboard PDFs & Summary videos
-├── Dockerfile          # Multi-stage production container specification
-├── docker-compose.yml  # Container service definitions & persistent volumes
-├── requirements.txt    # Python package dependencies
-├── config.py           # Centralized configuration management
-└── run.py              # Application entrypoint launcher
+├── agents/                 # LangGraph agent nodes (Supervisor, Multimodal RAG)
+├── backend/                # FastAPI app, REST routing, WebSockets & session memory
+├── core/                   # Video, Audio, Vision, Vector DB & Media synthesis engines
+├── frontend/               # Grey-Black studio single-page web UI (HTML, CSS, JS)
+│   ├── css/style.css       # Precision design tokens & component stylesheets
+│   └── js/                 # Modular controllers (player, chat, app, api)
+├── eval_dashboard.py       # Streamlit interactive evaluation & benchmarking studio
+├── eval_tokens_and_rag.py  # CLI benchmarking tool for tokens, latency & Ragas
+├── reports/                # Exported evaluation metrics (JSON & Markdown)
+├── schemas/                # Pydantic schemas for RAG requests, segments & metadata
+├── data/                   # Raw uploaded videos (mounted volume)
+├── processed/              # Extracted keyframes & persistent ChromaDB storage
+├── summaries/              # Output directory for Storyboard PDFs & Summary videos
+├── Dockerfile              # Multi-stage production container specification
+├── docker-compose.yml      # Container service definitions & persistent volumes
+├── requirements.txt        # Python package dependencies (including ragas & streamlit)
+├── config.py               # Centralized configuration management
+└── run.py                  # Application entrypoint launcher
 ```
 
 ---

@@ -265,7 +265,10 @@ const App = {
     const countBadge = document.getElementById("sceneCountBadge");
     if (!railEl) return;
 
-    railEl.innerHTML = '<div class="empty-rail-notice">Loading scene data...</div>';
+    if (this._timelinePollTimeout) {
+      clearTimeout(this._timelinePollTimeout);
+      this._timelinePollTimeout = null;
+    }
 
     try {
       const data = await API.fetchTimeline(videoId);
@@ -278,11 +281,25 @@ const App = {
       if (scenes.length === 0) {
         railEl.innerHTML = `
           <div class="empty-rail-notice">
-            ⚡ Preparing video scenes & keyframes in the background... Timeline cards will appear automatically.
+            <span class="indexing-pulse">⚡</span> Detecting video scenes & keyframes in background... Timeline will appear automatically.
           </div>
         `;
+
+        // Automatically poll for newly detected scenes if video is preparing
+        if (!this._pollAttempts) this._pollAttempts = 0;
+        if (this._pollAttempts < 25 && this.activeVideoId === videoId) {
+          this._pollAttempts++;
+          this._timelinePollTimeout = setTimeout(() => {
+            if (this.activeVideoId === videoId) {
+              this.loadTimeline(videoId);
+            }
+          }, 2500);
+        }
         return;
       }
+
+      // Reset polling once scenes arrive
+      this._pollAttempts = 0;
 
       railEl.innerHTML = "";
       scenes.forEach((s) => {
@@ -290,12 +307,19 @@ const App = {
         card.className = "scene-timeline-card";
         card.title = `Click to seek to Scene ${s.scene_index + 1} (${s.formatted_start})`;
 
+        const thumbHtml = s.keyframe_url
+          ? `<img src="${s.keyframe_url}" alt="Scene ${s.scene_index + 1}" class="scene-card-thumb" onerror="this.style.display='none'">`
+          : "";
+
         card.innerHTML = `
           <div class="scene-card-top">
             <span class="scene-title-badge">Scene ${s.scene_index + 1}</span>
             <span class="scene-timecode-badge">${s.formatted_start} - ${s.formatted_end}</span>
           </div>
-          <div class="scene-description-text">${this.escapeHtml(s.description || "Video segment")}</div>
+          <div class="scene-card-body">
+            ${thumbHtml}
+            <div class="scene-description-text">${this.escapeHtml(s.description || "Video segment")}</div>
+          </div>
         `;
 
         card.addEventListener("click", () => {

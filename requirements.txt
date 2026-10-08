@@ -30,3 +30,9 @@ pydantic>=2.9.0
 python-dotenv
 websockets
 python-multipart
+
+# Evaluation & Benchmarking
+ragas>=0.2.0
+datasets
+streamlit>=1.38.0
+torchvision

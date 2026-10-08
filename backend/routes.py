@@ -96,29 +96,37 @@ async def list_videos():
 # 2. Timeline & Video Inspection Endpoints
 # =========================================================================
 
+import urllib.parse
+
 @router.get("/videos/{video_id}/timeline")
+@router.get("/timeline/{video_id}")
 async def get_video_timeline(video_id: str):
     """
     Returns the scene timeline, timestamps, and keyframe image URLs for a video.
+    Supports both /api/videos/{video_id}/timeline and /api/timeline/{video_id}.
     """
-    scenes = vector_store.get_all_scenes_for_video(video_id)
+    clean_id = urllib.parse.unquote(video_id).strip()
+    scenes = vector_store.get_all_scenes_for_video(clean_id)
+    if not scenes and clean_id != video_id:
+        scenes = vector_store.get_all_scenes_for_video(video_id)
+
     if not scenes:
         # Check if video exists locally but isn't indexed yet
         vid_path = None
         for f in config.DATA_DIR.iterdir():
-            if f.stem == video_id:
+            if f.stem == clean_id or f.stem == video_id:
                 vid_path = str(f)
                 break
         
         if vid_path:
-            return {"video_id": video_id, "indexed": False, "scenes": []}
+            return {"video_id": clean_id, "indexed": False, "scenes": []}
         raise HTTPException(status_code=404, detail="Video not found")
 
     timeline = []
     for s in scenes:
         meta = s.get("metadata", {})
-        idx = meta.get("scene_index")
-        kf_filename = f"{video_id}_scene_{idx:03d}.jpg"
+        idx = meta.get("scene_index", 0)
+        kf_filename = f"{clean_id}_scene_{idx:03d}.jpg"
         
         timeline.append({
             "scene_index": idx,
@@ -127,10 +135,10 @@ async def get_video_timeline(video_id: str):
             "formatted_start": meta.get("formatted_start", "00:00"),
             "formatted_end": meta.get("formatted_end", "00:00"),
             "description": s.get("document", ""),
-            "keyframe_url": f"/api/media/keyframe/{video_id}/{kf_filename}"
+            "keyframe_url": f"/api/media/keyframe/{urllib.parse.quote(clean_id)}/{urllib.parse.quote(kf_filename)}"
         })
 
-    return {"video_id": video_id, "indexed": True, "scenes": timeline}
+    return {"video_id": clean_id, "indexed": True, "scenes": timeline}
 
 
 # =========================================================================
@@ -327,7 +335,11 @@ async def stream_raw_video(filename: str):
 @router.get("/media/keyframe/{video_id}/{filename}")
 async def get_keyframe_image(video_id: str, filename: str):
     """Serves extracted JPEG keyframes for the timeline and scene cards."""
-    img_path = config.KEYFRAMES_DIR / video_id / filename
+    clean_vid = urllib.parse.unquote(video_id).strip()
+    clean_file = urllib.parse.unquote(filename).strip()
+    img_path = config.KEYFRAMES_DIR / clean_vid / clean_file
+    if not img_path.exists():
+        img_path = config.KEYFRAMES_DIR / video_id / filename
     if not img_path.exists():
         raise HTTPException(status_code=404, detail="Keyframe image not found")
     return FileResponse(path=str(img_path), media_type="image/jpeg")

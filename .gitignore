@@ -52,6 +52,11 @@ venv.bak/
 /summaries/*
 !/summaries/.gitkeep
 
+/reports/*
+!/reports/.gitkeep
+!/reports/latest_metrics.md
+!/reports/latest_metrics.json
+
 /scratch/
 /sample_videos/*
 !/sample_videos/.gitkeep

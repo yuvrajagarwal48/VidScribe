@@ -32,9 +32,30 @@ services:
       - ./processed:/app/processed
       # 3. Exported Storyboard PDFs and AI Summary Highlight Videos
       - ./summaries:/app/summaries
+      # 4. Evaluation and benchmark reports
+      - ./reports:/app/reports
     deploy:
       resources:
         limits:
           memory: 4G
         reservations:
           memory: 1G
+
+  eval-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vidscribe-eval-dashboard
+    restart: unless-stopped
+    command: ["streamlit", "run", "eval_dashboard.py", "--server.port", "8501", "--server.address", "0.0.0.0", "--server.headless", "true"]
+    ports:
+      - "8501:8501"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-3.1-flash-lite}
+    volumes:
+      - ./data:/app/data
+      - ./processed:/app/processed
+      - ./summaries:/app/summaries
+      - ./reports:/app/reports

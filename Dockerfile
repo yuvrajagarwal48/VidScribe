@@ -45,10 +45,10 @@ RUN python -c "import whisper; whisper.load_model('base')" && \
 COPY . .
 
 # Ensure storage directories exist inside the container
-RUN mkdir -p /app/data /app/processed/keyframes /app/processed/vectordb /app/summaries
+RUN mkdir -p /app/data /app/processed/keyframes /app/processed/vectordb /app/summaries /app/reports
 
-# Expose FastAPI & WebSocket service port
-EXPOSE 8000
+# Expose FastAPI & WebSocket service port (8000) and Streamlit dashboard port (8501)
+EXPOSE 8000 8501
 
 # Health check to verify service availability
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

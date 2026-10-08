@@ -21,7 +21,11 @@ const API = {
    * Fetches the scene timeline and keyframe URLs for a specific video.
    */
   async fetchTimeline(videoId) {
-    const res = await fetch(`${this.baseUrl}/api/timeline/${videoId}`);
+    const encId = encodeURIComponent(videoId);
+    let res = await fetch(`${this.baseUrl}/api/videos/${encId}/timeline`);
+    if (!res.ok) {
+      res = await fetch(`${this.baseUrl}/api/timeline/${encId}`);
+    }
     if (!res.ok) throw new Error("Failed to fetch timeline");
     return await res.json();
   },
@@ -46,7 +50,8 @@ const API = {
    * Triggers progressive Tier 1 indexing on a video.
    */
   async processVideo(videoId) {
-    const res = await fetch(`${this.baseUrl}/api/process/${videoId}`, {
+    const encId = encodeURIComponent(videoId);
+    const res = await fetch(`${this.baseUrl}/api/process/${encId}`, {
       method: "POST",
     });
     if (!res.ok) throw new Error("Video processing failed");

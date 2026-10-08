@@ -18,6 +18,12 @@ scripts_dir = os.path.dirname(sys.executable)
 if scripts_dir and scripts_dir not in os.environ.get("PATH", ""):
     os.environ["PATH"] = scripts_dir + os.pathsep + os.environ.get("PATH", "")
 
+# Prevent UnicodeEncodeError on Windows consoles when handling unicode filenames or emojis
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # ==========================================
 # 1. Model Configuration (Google Gemini)
 # ==========================================

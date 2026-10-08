@@ -13,8 +13,6 @@ import tempfile
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from gtts import gTTS
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import textwrap
 
 import config
@@ -178,6 +176,9 @@ class MediaSynthesisEngine:
         pdf_path = output_path or str(self.output_dir / f"{video_id}_storyboard.pdf")
 
         try:
+            import matplotlib.pyplot as plt
+            from matplotlib.backends.backend_pdf import PdfPages
+
             with PdfPages(pdf_path) as pdf:
                 # ----------------------------------------------------
                 # Page 1: Title & Executive Summary Cover

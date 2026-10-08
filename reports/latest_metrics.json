@@ -1,0 +1,192 @@
+{
+  "timestamp": "2026-10-08 18:27:48",
+  "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+  "llm_provider": "gemini",
+  "llm_model": "gemini-3.1-flash-lite",
+  "summary": {
+    "total_calls": 6,
+    "total_input_tokens": 8455,
+    "total_output_tokens": 464,
+    "grand_total_tokens": 8919,
+    "total_cost_usd": 0.000773,
+    "total_pipeline_time_s": 133.89,
+    "overall_output_tps": 3.47
+  },
+  "phases": [
+    {
+      "phase": "1a. PySceneDetect & Keyframes",
+      "calls": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "cost_usd": 0.0,
+      "latency_s": 5.12,
+      "tokens_per_sec": 0.0,
+      "details": {
+        "scenes_detected": 68,
+        "video_duration_s": 275.88
+      }
+    },
+    {
+      "phase": "1b. Whisper Speech Recognition",
+      "calls": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "cost_usd": 0.0,
+      "latency_s": 91.41,
+      "tokens_per_sec": 0.0,
+      "details": {
+        "dialogue_segments": 93,
+        "audio_duration_s": 275.88,
+        "real_time_factor_rtf": 3.02
+      }
+    },
+    {
+      "phase": "1c. ChromaDB Vector Upsert",
+      "calls": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "cost_usd": 0.0,
+      "latency_s": 18.33,
+      "tokens_per_sec": 0.0,
+      "details": {
+        "documents_indexed": 109
+      }
+    },
+    {
+      "phase": "1d. Tier 2 Gemini Vision",
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "cost_usd": 0.0,
+      "latency_s": 0.0,
+      "tokens_per_sec": 0.0,
+      "details": {}
+    },
+    {
+      "phase": "2a. ChromaDB Vector Retrieval",
+      "calls": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "cost_usd": 0.0,
+      "latency_s": 0.2,
+      "tokens_per_sec": 0.0,
+      "details": {
+        "top_k_retrieved": 4,
+        "cosine_distances": [
+          0.5299,
+          0.607,
+          0.6121,
+          0.6343
+        ]
+      }
+    },
+    {
+      "phase": "2b. Multimodal Gemini RAG",
+      "calls": 1,
+      "input_tokens": 5405,
+      "output_tokens": 73,
+      "total_tokens": 5478,
+      "cost_usd": 0.000427,
+      "latency_s": 10.04,
+      "tokens_per_sec": 7.3,
+      "details": {}
+    },
+    {
+      "phase": "3. Full Video Summarization",
+      "calls": 1,
+      "input_tokens": 3050,
+      "output_tokens": 391,
+      "total_tokens": 3441,
+      "cost_usd": 0.000346,
+      "latency_s": 8.78,
+      "tokens_per_sec": 44.5,
+      "details": {}
+    }
+  ],
+  "query_evaluation": {
+    "query": "Who won the match and what was the score?",
+    "answer": "India won the match against Australia by 5 wickets, as confirmed by the on-screen graphic at [04:17 - 04:31]. The commentary also notes this as a \"magic win for India,\" marking their entry into the semi-finals of the World Cup [04:17 - 04:31].",
+    "vector_search_latency_ms": 198.31,
+    "cosine_distances": [
+      0.5299,
+      0.607,
+      0.6121,
+      0.6343
+    ],
+    "e2e_query_latency_s": 10.048,
+    "citations_count": 5,
+    "has_timestamp_citation": true,
+    "grounded_segments": [
+      {
+        "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+        "scene_index": 66,
+        "start_time": 257.68,
+        "end_time": 271.84,
+        "formatted_start": "00:04:17.680",
+        "formatted_end": "00:04:31.839",
+        "modality_type": "combined",
+        "source_preview": "C:\\Users\\yuvra\\Documents\\Coding\\VidScribe\\processed\\keyframes\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match_scene_066.jpg"
+      },
+      {
+        "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+        "scene_index": 36,
+        "start_time": 119.8,
+        "end_time": 121.2,
+        "formatted_start": "00:01:59.799",
+        "formatted_end": "00:02:01.200",
+        "modality_type": "combined",
+        "source_preview": "C:\\Users\\yuvra\\Documents\\Coding\\VidScribe\\processed\\keyframes\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match_scene_036.jpg"
+      },
+      {
+        "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+        "scene_index": 35,
+        "start_time": 115.28,
+        "end_time": 119.8,
+        "formatted_start": "00:01:55.280",
+        "formatted_end": "00:01:59.799",
+        "modality_type": "combined",
+        "source_preview": "C:\\Users\\yuvra\\Documents\\Coding\\VidScribe\\processed\\keyframes\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match_scene_035.jpg"
+      },
+      {
+        "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+        "scene_index": 31,
+        "start_time": 98.68,
+        "end_time": 105.36,
+        "formatted_start": "00:01:38.680",
+        "formatted_end": "00:01:45.359",
+        "modality_type": "combined",
+        "source_preview": "C:\\Users\\yuvra\\Documents\\Coding\\VidScribe\\processed\\keyframes\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match_scene_031.jpg"
+      },
+      {
+        "video_id": "Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match",
+        "scene_index": 67,
+        "start_time": 271.84,
+        "end_time": 275.88,
+        "formatted_start": "00:04:31.839",
+        "formatted_end": "00:04:35.879",
+        "modality_type": "combined",
+        "source_preview": "C:\\Users\\yuvra\\Documents\\Coding\\VidScribe\\processed\\keyframes\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match\\Cricket World Cup 2011 India vs Aus Highlights \uff5c Thrilling Match_scene_067.jpg"
+      }
+    ],
+    "retrieved_contexts": [
+      "Scene 66 (00:04:17.680 to 00:04:31.839). . it's an amtagic win for India. You've heard saying finishes things in on. The first time in India into the semi-finals of the World Cup Australia out of the competition..",
+      "Scene 36 (00:01:59.799 to 00:02:01.200). . Final ball of the innings..",
+      "Scene 35 (00:01:55.280 to 00:01:59.799). . innings from the Australian captain..",
+      "Scene 31 (00:01:38.680 to 00:01:45.359). . That's his 100. It's taken him 18 innings to reach a three figure score for Australia and one international.."
+    ],
+    "reasoning_trace": [
+      "[SUPERVISOR] \ud83c\udfaf Orchestrator classified intent as 'rag_qa' -> Deployed Multimodal RAG Agent (ChromaDB & Gemini Analyst)",
+      "[RAG] \ud83d\udd0d Searching ChromaDB multimodal vector store for: 'Who won the match and what was the score?'",
+      "[RAG] \u23f1\ufe0f Query inquires about outcome. Temporally anchored 1 concluding scene(s).",
+      "[RAG] \ud83d\udcca Synthesizing grounded context across 5 retrieved scenes.",
+      "[VISION] \ud83d\udc41\ufe0f Inspected 4 candidate keyframe image(s) for visual details.",
+      "[ANALYST] \ud83e\udde0 Gemini Multimodal Analyst generating grounded response...",
+      "[ANALYST] \u2705 Grounded answer formulated with precise timestamps."
+    ]
+  }
+}
