@@ -61,6 +61,25 @@ class AudioEngine:
             cls._is_faster_whisper = False
             print("Standard Whisper model loaded successfully.")
 
+    @classmethod
+    def unload_whisper(cls):
+        """
+        Unloads Whisper model weights from memory and calls garbage collection
+        and glibc malloc_trim to free ~150 MB back to the operating system immediately.
+        """
+        if cls._whisper_instance is not None:
+            del cls._whisper_instance
+            cls._whisper_instance = None
+            cls._is_faster_whisper = False
+            import gc
+            gc.collect()
+            try:
+                import ctypes
+                ctypes.CDLL("libc.so.6").malloc_trim(0)
+            except Exception:
+                pass
+            print("AudioEngine: Whisper model successfully unloaded and resident memory trimmed.")
+
     @staticmethod
     def _extract_audio_subclip(video_path: str, start_time: float, end_time: float, output_wav: str) -> bool:
         """

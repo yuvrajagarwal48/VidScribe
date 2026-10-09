@@ -66,8 +66,9 @@ WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
 VECTOR_DB_COLLECTION = "video_multimodal_rag"
 TOP_K_RESULTS = int(os.getenv("TOP_K_RESULTS", "8"))
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
-# Embedding provider ("auto", "gemini" for 0MB local RAM, or "sentence_transformers")
-EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "auto").lower()
+# Embedding provider ("gemini" for 0MB local RAM, "sentence_transformers", or "auto")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "gemini").lower()
+EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "384"))
 
 # ==========================================
 # 5. Web Server Configuration

@@ -11,7 +11,9 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8000
+    SERVER_PORT=8000 \
+    EMBEDDING_PROVIDER=gemini \
+    EMBEDDING_DIMENSION=384
 
 # Install critical system libraries:
 # - ffmpeg: Required by MoviePy, Whisper & OpenCV for media decoding/encoding

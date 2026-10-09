@@ -16,6 +16,8 @@ services:
       - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-3.1-flash-lite}
       
       # Model & Processing Hyperparameters
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-gemini}
+      - EMBEDDING_DIMENSION=${EMBEDDING_DIMENSION:-384}
       - WHISPER_MODEL=${WHISPER_MODEL:-base}
       - SCENE_THRESHOLD=${SCENE_THRESHOLD:-20.0}
       - MIN_SCENE_LEN=${MIN_SCENE_LEN:-15}
@@ -54,6 +56,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
       - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-3.1-flash-lite}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-gemini}
+      - EMBEDDING_DIMENSION=${EMBEDDING_DIMENSION:-384}
     volumes:
       - ./data:/app/data
       - ./processed:/app/processed

@@ -118,17 +118,8 @@ def rag_node(state: AgentState) -> Dict[str, Any]:
     hits = _vector_store.query(query_text=search_query, video_id=video_id, top_k=4)
     
     if not hits:
-        video_path = state.get("video_path")
-        if video_path:
-            trace.append(f"[INGESTION] ⚡ No indexed scenes found for '{video_id}'. Running automatic Tier 1 indexing...")
-            from agents.ingestion_agent import ingestion_node
-            ingest_res = ingestion_node(state)
-            trace.extend(ingest_res.get("reasoning_trace", []))
-            hits = _vector_store.query(query_text=search_query, video_id=video_id, top_k=4)
-
-    if not hits:
-        trace.append("[RAG] ⚠️ No matching scenes found in vector store.")
-        no_hit_msg = "I couldn't find any scenes in the video matching your question. Please ensure the video has been uploaded and processed."
+        trace.append("[RAG] ⚠️ No matching scenes found in vector store for this specific question.")
+        no_hit_msg = "I couldn't find any relevant scenes in the video matching your specific question. Please try rephrasing your question or asking about a specific visual or spoken event."
         return {
             "messages": [
                 HumanMessage(content=query),

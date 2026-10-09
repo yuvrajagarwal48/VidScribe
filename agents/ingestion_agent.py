@@ -98,6 +98,9 @@ def ingestion_node(state: AgentState) -> Dict[str, Any]:
     except Exception as e:
         trace.append(f"Notice: Audio transcription note ({e}). Continuing with visual timeline.")
         all_transcripts = []
+    finally:
+        # Immediately unload Whisper model weights to free memory for vector operations and chat queries
+        AudioEngine.unload_whisper()
 
     analyses: List[SceneAnalysisResult] = []
     for scene in scenes:

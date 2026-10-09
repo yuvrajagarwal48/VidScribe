@@ -79,18 +79,26 @@ class EmbeddingFactory:
     def get_embeddings() -> Embeddings:
         """
         Returns a LangChain-compatible Embeddings model.
-        Defaults to local HuggingFace Sentence-Transformers ('all-MiniLM-L6-v2')
-        for fast, cost-free, and offline vector indexing.
+        Uses Google Gemini cloud embeddings for 0 MB local RAM,
+        falling back to local HuggingFace Sentence-Transformers.
         """
+        if getattr(config, "EMBEDDING_PROVIDER", "gemini").lower() == "gemini" and config.GEMINI_API_KEY:
+            try:
+                from langchain_google_genai import GoogleGenerativeAIEmbeddings
+                return GoogleGenerativeAIEmbeddings(
+                    model="models/gemini-embedding-001",
+                    google_api_key=config.GEMINI_API_KEY
+                )
+            except Exception as e:
+                print(f"Notice: GoogleGenerativeAIEmbeddings fallback note: {e}")
+
         try:
             from langchain_community.embeddings import HuggingFaceEmbeddings
             return HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL_NAME)
-        except Exception as e:
-            # Fallback if sentence-transformers / torch has an environment issue
-            print(f"Notice: HuggingFaceEmbeddings not available ({e}). Using Gemini embeddings fallback.")
+        except Exception:
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
             return GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-001",
                 google_api_key=config.GEMINI_API_KEY
             )
 

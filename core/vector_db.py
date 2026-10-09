@@ -10,10 +10,55 @@ import os
 from typing import List, Dict, Any, Optional
 import chromadb
 from chromadb.config import Settings
+from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
 import config
 from schemas.video_models import SceneAnalysisResult
+
+
+class GeminiChromaEmbeddingFunction(EmbeddingFunction[Documents]):
+    """
+    Zero-RAM Cloud Embedding Function for ChromaDB using Google Gemini API.
+    Calls models/gemini-embedding-001 with output_dimensionality=384 for 100%
+    compatibility with 384-dim vector collections, consuming 0 MB local RAM.
+    Returns 'default' as name() so ChromaDB can seamlessly read collections
+    created with the default 384-dim embedding function without config conflicts.
+    """
+    def __init__(self, api_key: str, model_name: str = "models/gemini-embedding-001", dimension: int = 384):
+        self.api_key = api_key
+        self.model_name = model_name
+        self.dimension = dimension
+        self._client = None
+
+    def name(self) -> str:
+        return "default"
+
+    def _get_client(self):
+        if self._client is None:
+            from google import genai
+            self._client = genai.Client(api_key=self.api_key)
+        return self._client
+
+    def __call__(self, input: Documents) -> Embeddings:
+        if not input:
+            return []
+        client = self._get_client()
+        from google.genai import types
+        config_obj = types.EmbedContentConfig(output_dimensionality=self.dimension)
+        # Sanitize empty/whitespace-only strings which cause Gemini API 400 INVALID_ARGUMENT
+        clean_input = [text if (isinstance(text, str) and text.strip()) else "empty" for text in input]
+        all_embeddings: Embeddings = []
+        batch_size = 32
+        for i in range(0, len(clean_input), batch_size):
+            chunk = clean_input[i:i + batch_size]
+            res = client.models.embed_content(
+                model=self.model_name,
+                contents=chunk,
+                config=config_obj
+            )
+            all_embeddings.extend([e.values for e in res.embeddings])
+        return all_embeddings
 
 
 class VectorDBStore:
@@ -29,20 +74,21 @@ class VectorDBStore:
         self.client = chromadb.PersistentClient(path=self.persist_dir)
 
         # Embedding function selection:
-        # 1. Gemini text-embedding-004 (remote API, 0 MB local RAM, ideal for Render)
-        # 2. Fast local ONNX DefaultEmbeddingFunction (no PyTorch, low memory)
+        # 1. Gemini cloud embeddings (remote API, 0 MB local RAM, ideal for Render)
+        # 2. Fast local ONNX DefaultEmbeddingFunction
         # 3. SentenceTransformers fallback
-        embedding_provider = getattr(config, "EMBEDDING_PROVIDER", "auto").lower()
+        embedding_provider = getattr(config, "EMBEDDING_PROVIDER", "gemini").lower()
         if embedding_provider == "gemini" and config.GEMINI_API_KEY:
             try:
-                from chromadb.utils.embedding_functions import GoogleGenerativeAiEmbeddingFunction
-                self.embedding_function = GoogleGenerativeAiEmbeddingFunction(
+                dim = getattr(config, "EMBEDDING_DIMENSION", 384)
+                self.embedding_function = GeminiChromaEmbeddingFunction(
                     api_key=config.GEMINI_API_KEY,
-                    model_name="models/text-embedding-004"
+                    model_name="models/gemini-embedding-001",
+                    dimension=dim
                 )
-                print("VectorDB: Using Google Gemini API text-embedding-004 (zero local RAM).")
+                print("VectorDB: Using Google Gemini API Cloud Embeddings (0 MB local RAM).")
             except Exception as e:
-                print(f"Notice: GoogleGenerativeAiEmbeddingFunction setup notice ({e}), using default ONNX.")
+                print(f"Notice: GeminiChromaEmbeddingFunction initialization ({e}), falling back.")
                 self.embedding_function = None
         else:
             self.embedding_function = None

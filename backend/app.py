@@ -77,27 +77,38 @@ async def websocket_chat_endpoint(websocket: WebSocket, video_id: str):
             })
 
             # Locate video file if video_id is provided
+            # Normalize video_id and locate video file
+            clean_video_id = None
             video_path = None
             if video_id and video_id != "all":
+                import urllib.parse
+                clean_video_id = urllib.parse.unquote(video_id).strip()
+                for ext in [".mp4", ".mov", ".mkv", ".webm", ".avi"]:
+                    if clean_video_id.lower().endswith(ext):
+                        clean_video_id = clean_video_id[:-len(ext)]
+                        break
                 for f in config.DATA_DIR.iterdir():
-                    if f.stem == video_id:
+                    if f.stem == clean_video_id or f.name == clean_video_id:
                         video_path = str(f)
+                        clean_video_id = f.stem
                         break
 
-            # Implicit Auto-Indexing: If video is not yet indexed, index it automatically on-the-fly
-            if video_path and video_id != "all":
+            # Implicit Auto-Indexing: If video is truly not yet indexed, index it
+            if video_path and clean_video_id and clean_video_id != "all":
                 from core.vector_db import VectorDBStore
                 vstore = VectorDBStore()
-                existing_scenes = vstore.get_all_scenes_for_video(video_id)
+                existing_scenes = vstore.get_all_scenes_for_video(clean_video_id)
+                if not existing_scenes and clean_video_id != video_id:
+                    existing_scenes = vstore.get_all_scenes_for_video(video_id)
                 if not existing_scenes:
                     await websocket.send_json({
                         "type": "trace",
-                        "message": f"[INGESTION] ⚡ Video '{video_id}' is unindexed. Automatically performing Tier 1 indexing..."
+                        "message": f"[INGESTION] ⚡ Video '{clean_video_id}' is unindexed. Automatically performing Tier 1 indexing..."
                     })
                     from agents.ingestion_agent import ingestion_node
                     ingest_state = {
                         "video_path": video_path,
-                        "video_id": video_id,
+                        "video_id": clean_video_id,
                         "reasoning_trace": []
                     }
                     ingest_res = ingestion_node(ingest_state)
@@ -106,6 +117,8 @@ async def websocket_chat_endpoint(websocket: WebSocket, video_id: str):
                             "type": "trace",
                             "message": f"[INGESTION] {tr}"
                         })
+                    import gc
+                    gc.collect()
 
             # Retrieve prior conversation turns from session memory
             prior_messages = get_session_messages(session_id)
